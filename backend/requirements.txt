@@ -3,3 +3,8 @@ uvicorn[standard]
 python-docx
 pandas
 openpyxl
+celery
+redis
+sqlalchemy
+alembic
+psycopg2-binary

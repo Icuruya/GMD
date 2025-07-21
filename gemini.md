@@ -1,68 +1,71 @@
-# Gemini Project Context
+# GMD Project: Vision, Architecture & Roadmap
 
-## Project Vision
+## 1. Project Vision
 
-The goal is to build a web platform for users to mass-generate documents. Users can upload their own Word templates (`.docx`), upload their data (from Excel/CSV), visually map the data columns to the template's placeholders, and generate a unique document for each row of data. The system should be generic and not tied to a specific document type.
+The goal is to build a web platform for users to mass-generate documents. Users can upload their own Word templates (`.docx`), upload their data (from Excel/CSV), visually map the data columns to the template's placeholders, and generate a unique document for each row of data. The system should be generic and not tied to a specific document type, eventually allowing users to define their own transformation and conditional logic rules.
 
-## Current State: Functional Prototype
+## 2. Current Architecture: Functional Prototype
 
-We have successfully built a functional local prototype that accomplishes the core workflow.
+We have a functional local prototype that accomplishes the core workflow.
 
-### Current Architecture
+-   **Frontend:** A Next.js application in `src/` provides the full user interface for the generation workflow:
+    1.  Upload a `.docx` template.
+    2.  Upload an `.xlsx` or `.csv` data file.
+    3.  Visually map template placeholders to data columns.
+    4.  Trigger the generation process.
 
--   **Frontend:** A Next.js application.
-    -   A new page has been created at `src/app/(app)/templates/page.tsx`.
-    -   This page provides the full user interface for the generation workflow:
-        1.  Upload a `.docx` template.
-        2.  Upload an `.xlsx` or `.csv` data file.
-        3.  Visually map template placeholders to data columns.
-        4.  Trigger the generation process.
-    -   It uses the `xlsx` library to parse data files directly in the browser.
+-   **Backend:** A FastAPI server in `backend/` written in Python. It exposes a REST API that the frontend consumes.
 
--   **Backend:** A FastAPI server running in Python.
-    -   Located in the `backend/` directory.
-    -   Dependencies are managed in `backend/requirements.txt`.
-    -   The main application logic is in `backend/main.py`.
-    -   It exposes a REST API for the frontend to consume.
+-   **Core API Endpoints:**
+    -   `POST /templates/placeholders`: Receives a `.docx` file and returns a list of all found placeholders.
+    -   `POST /generate/bulk`: Receives a template, data, and mappings. It generates all documents and returns them in a single `.zip` file.
 
--   **API Endpoints Implemented:**
-    -   `POST /templates/placeholders`: Receives a `.docx` file and returns a list of all found placeholders (e.g., `[NAME]`).
-    -   `POST /generate/bulk`: Receives a template file, a data file, and a JSON object describing the mappings. It then:
-        1.  Reads the data file using Pandas.
-        2.  Iterates through each data row.
-        3.  For each row, it fills the template with the corresponding data.
-        4.  Adds the generated document to an in-memory ZIP archive.
-        5.  Returns the final `.zip` file for download.
+## 3. Project Roadmap
 
-### Key Files in the Prototype
+This roadmap outlines the key phases to evolve the prototype into a robust, scalable, and user-friendly web application.
 
--   `gemini.md`: This file.
--   `backend/main.py`: The FastAPI application providing the backend API.
--   `backend/requirements.txt`: Python dependencies for the backend.
--   `src/app/(app)/templates/page.tsx`: The main React component for the user-facing workflow.
--   `package.json`: Node.js dependencies, now including the `xlsx` library.
+### Phase 1: Asynchronous Generation & Scalability
 
-## Next Steps & Future Improvements
+-   **Problem:** The current synchronous generation process can cause browser and server timeouts with large datasets (e.g., thousands of documents).
+-   **Action Plan:**
+    1.  **Integrate Task Queue:** Add Celery with Redis to the FastAPI backend to manage background tasks.
+    2.  **Create Job Endpoint:** Convert `POST /generate/bulk` into `POST /jobs`. This endpoint will validate the request, create a `GenerationJob` record in the database with a "Queued" status, and return a `job_id` to the frontend immediately.
+    3.  **Background Worker:** The generation logic will be executed by a Celery worker in the background.
+    4.  **Status Polling:** Implement a `GET /jobs/{job_id}` endpoint. The frontend will use this to periodically check the job status (e.g., "Processing", "Completed", "Failed").
+    5.  **Download Link:** Once the job is "Completed", the status endpoint will provide a secure URL to download the resulting ZIP file.
 
-The core functionality is in place. The next steps focus on making the application more robust, scalable, and user-friendly.
+### Phase 2: Persistence & Data Management
 
-1.  **Asynchronous Generation & Scalability:**
-    -   For large data files (as noted from the 12k row test), the current synchronous process can cause browser/server timeouts.
-    -   **Action:** Refactor the generation process to be asynchronous. When a user starts a job, the API should immediately return a Job ID. The actual generation should happen in the background using a task queue (like Celery with Redis, or a cloud-native solution).
-    -   The frontend would then poll a `GET /jobs/{job_id}` endpoint to check the status and provide a download link when ready.
+-   **Problem:** The application is currently stateless. Templates, mappings, and generation history are lost after each session.
+-   **Action Plan:**
+    1.  **Database Setup:** Integrate a database with the backend. Use SQLite for simple local development and plan for PostgreSQL in production.
+    2.  **Define Models:** Create database models for `Users`, `Templates` (storing file info and path), `ColumnMappings` (linking a template to a specific mapping configuration), and `GenerationJobs`.
+    3.  **API Integration:** Modify the API endpoints to save, retrieve, and manage data from the database. For example, allow users to select a previously uploaded template.
 
-2.  **Persistence and State Management:**
-    -   Currently, templates and mappings are not saved.
-    -   **Action:** Implement a database (e.g., SQLite for local development, PostgreSQL for production) to store:
-        -   User accounts.
-        -   Uploaded templates.
-        -   Saved column mappings for specific templates.
-        -   Generation job history.
+### Phase 3: Enhanced User Experience & Features
 
-3.  **Enhanced User Experience:**
-    -   Allow users to save and manage their templates and mappings.
-    -   Provide better feedback during the generation process (e.g., a progress bar).
-    -   Add an option to generate individual PDFs instead of a ZIP of DOCX files.
+-   **Problem:** The user interface is functional for the core workflow but lacks features for managing assets or tracking progress.
+-   **Action Plan:**
+    1.  **User Dashboard:** Create a central dashboard where users can view and manage their saved templates and see a history of their past generation jobs.
+    2.  **Real-time Feedback:** Implement a progress bar or status indicator in the UI that updates based on the information from the `GET /jobs/{job_id}` endpoint.
+    3.  **Saved Mappings:** Develop a UI for users to save, name, and reuse their column mappings for specific templates.
+    4.  **PDF Generation:** Add an option to generate output as individual PDF files within the ZIP, or even a single consolidated PDF.
 
-4.  **Deployment:**
-    -   Plan the deployment architecture (e.g., using Docker containers for the frontend and backend, deploying to a cloud provider).
+### Phase 4: Generic Rule Engine
+
+-   **Problem:** The current system only supports direct 1-to-1 data mapping. It cannot handle conditional logic or data transformations, which is key to making it truly generic.
+-   **Action Plan:**
+    1.  **Rule Engine Integration:** Research and integrate a Python-based rules engine (e.g., `business-rules`, `durable_rules`, or a custom-built solution).
+    2.  **Rule Definition UI:** Design and build a user-friendly interface for defining rules without code. For example:
+        -   **Conditionals:** "Include paragraph X *only if* column `Amount` > 1000."
+        -   **Formatting:** "Format column `Date` as `YYYY-MM-DD`."
+        -   **Calculated Fields:** "Create a new placeholder `[Full_Name]` by combining `[First_Name]` and `[Last_Name]`."
+    3.  **Backend Logic:** Modify the generation worker to process these rules for each row of data.
+
+### Phase 5: Deployment & Production Readiness
+
+-   **Problem:** The application is designed for local execution only.
+-   **Action Plan:**
+    1.  **Containerization:** Write `Dockerfile`s for the Next.js and FastAPI applications.
+    2.  **Orchestration:** Create a `docker-compose.yml` file to simplify the setup of the frontend, backend, database, and Celery/Redis for local development.
+    3.  **Cloud Deployment:** Prepare scripts and configurations for deployment to a cloud platform like Vercel (for Next.js) and Google Cloud Run or AWS Fargate (for the backend services).

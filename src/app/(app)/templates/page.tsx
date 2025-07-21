@@ -18,6 +18,10 @@ export default function TemplatesPage() {
   const [mappings, setMappings] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [numRowsToGenerate, setNumRowsToGenerate] = useState<number | null>(null);
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [jobStatus, setJobStatus] = useState<string | null>(null);
+  const [jobResultUrl, setJobResultUrl] = useState<string | null>(null);
 
   // --- Manejadores ---
 
@@ -103,7 +107,6 @@ export default function TemplatesPage() {
         return;
     }
     
-    // Validar que todos los placeholders estén mapeados
     const unmappedPlaceholders = Object.entries(mappings).filter(([_, value]) => !value);
     if (unmappedPlaceholders.length > 0) {
         setError(`Por favor, mapea todos los placeholders. Faltan: ${unmappedPlaceholders.map(([key]) => `[${key}]`).join(', ')}`);
@@ -112,37 +115,53 @@ export default function TemplatesPage() {
 
     setIsLoading(true);
     setError(null);
+    setJobId(null);
+    setJobStatus(null);
+    setJobResultUrl(null);
 
     const formData = new FormData();
     formData.append("template_file", templateFile);
     formData.append("data_file", dataFile);
     formData.append("mappings_json", JSON.stringify(mappings));
+    if (numRowsToGenerate !== null) {
+      formData.append("num_rows_to_generate", String(numRowsToGenerate));
+    }
 
     try {
-        const response = await fetch("http://127.0.0.1:8000/generate/bulk", {
+        const response = await fetch("http://127.0.0.1:8000/jobs", {
             method: "POST",
             body: formData,
         });
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.detail || "Error en el servidor durante la generación.");
+            throw new Error(errorData.detail || "Error en el servidor al iniciar la generación.");
         }
 
-        // Gestionar la descarga del archivo ZIP
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "documentos_generados.zip";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
+        const data = await response.json();
+        setJobId(data.job_id);
+        setJobStatus("PENDING");
+
+        // Iniciar el polling para el estado del trabajo
+        const pollStatus = async () => {
+          if (!data.job_id) return;
+          const statusResponse = await fetch(`http://127.0.0.1:8000/jobs/${data.job_id}`);
+          const statusData = await statusResponse.json();
+          setJobStatus(statusData.status);
+          if (statusData.status === "SUCCESS") {
+            setJobResultUrl(statusData.result_url);
+            setIsLoading(false);
+          } else if (statusData.status === "FAILURE") {
+            setError(statusData.info?.status || "Error desconocido durante la generación.");
+            setIsLoading(false);
+          } else {
+            setTimeout(pollStatus, 2000); // Reintentar en 2 segundos
+          }
+        };
+        pollStatus();
 
     } catch (err: any) {
         setError(err.message);
-    } finally {
         setIsLoading(false);
     }
   };
@@ -243,11 +262,50 @@ export default function TemplatesPage() {
               </div>
             ))}
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex-col items-start gap-4">
+            <div className="grid w-full max-w-sm items-center gap-1.5">
+              <Label htmlFor="num-rows-to-generate">Número de filas a generar (opcional)</Label>
+              <Input
+                id="num-rows-to-generate"
+                type="number"
+                min="1"
+                placeholder="Todas las filas"
+                value={numRowsToGenerate === null ? '' : numRowsToGenerate}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setNumRowsToGenerate(value === '' ? null : parseInt(value));
+                }}
+                disabled={isLoading}
+              />
+            </div>
             <Button onClick={handleGenerate} disabled={isGenerateButtonDisabled()}>
               {isLoading ? "Generando..." : "Generar Documentos"}
             </Button>
           </CardFooter>
+        </Card>
+      )}
+
+      {jobId && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Estado de la Generación</CardTitle>
+            <CardDescription>
+              ID del Trabajo: {jobId}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p>Estado: {jobStatus}</p>
+            {jobStatus === "PROGRESS" && jobStatus && (
+              <p>Progreso: {jobStatus}</p>
+            )}
+            {jobResultUrl && (
+              <Button asChild className="mt-4">
+                <a href={`http://127.0.0.1:8000${jobResultUrl}`} target="_blank" rel="noopener noreferrer">
+                  Descargar Documentos
+                </a>
+              </Button>
+            )}
+          </CardContent>
         </Card>
       )}
     </div>
