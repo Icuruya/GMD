@@ -1,6 +1,7 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
+import { ProjectProvider } from '@/context/ProjectContext';
 
 export const metadata: Metadata = {
   title: 'GMD',
@@ -21,7 +22,9 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        {children}
+        <ProjectProvider>
+          {children}
+        </ProjectProvider>
         <Toaster />
       </body>
     </html>

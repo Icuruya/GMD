@@ -5,6 +5,9 @@ from celery import Celery
 from docx import Document
 from typing import Dict, Any
 
+from database import SessionLocal
+import models
+
 # --- Importaciones de la lógica de documentos de main.py ---
 # En una aplicación más grande, esto estaría en su propio módulo de utilidades.
 import re
@@ -64,11 +67,19 @@ celery_app.conf.update(
 
 # --- Tarea Asíncrona de Generación de Documentos ---
 @celery_app.task(bind=True)
-def generate_documents_task(self, template_content_bytes: bytes, data_content_bytes: bytes, data_filename: str, mappings: dict, num_rows_to_generate: int | None = None):
+def generate_documents_task(self, template_path: str, data_content_bytes: bytes, data_filename: str, mappings: dict, num_rows_to_generate: int | None = None):
     """
     Tarea de Celery que genera documentos en segundo plano.
     """
+    db = SessionLocal()
     try:
+        db_job = db.query(models.GenerationJob).filter(models.GenerationJob.id == self.request.id).first()
+        if not db_job:
+            return
+
+        db_job.status = 'PROGRESS'
+        db.commit()
+
         # --- 1. Leer el archivo de datos ---
         self.update_state(state='PROGRESS', meta={'status': 'Leyendo archivo de datos...'})
         if data_filename.endswith('.xlsx'):
@@ -90,7 +101,7 @@ def generate_documents_task(self, template_content_bytes: bytes, data_content_by
             
             total_rows = len(df_to_process)
             for index, row in df_to_process.iterrows():
-                doc = Document(io.BytesIO(template_content_bytes))
+                doc = Document(template_path)
                 
                 data_for_row = {}
                 for placeholder, column_name in mappings.items():
@@ -115,15 +126,25 @@ def generate_documents_task(self, template_content_bytes: bytes, data_content_by
             output_filename = f"documento_{self.request.id}.docx"
             with open(output_filename, "wb") as f:
                 f.write(doc_buffer.getvalue())
+            db_job.status = 'SUCCESS'
+            db_job.result_file_path = output_filename
+            db.commit()
             return {'status': 'Completed', 'result': output_filename, 'file_type': 'docx'}
         else:
             zip_buffer.seek(0)
             output_filename = f"generated_docs_{self.request.id}.zip"
             with open(output_filename, "wb") as f:
                 f.write(zip_buffer.getvalue())
+            db_job.status = 'SUCCESS'
+            db_job.result_file_path = output_filename
+            db.commit()
             return {'status': 'Completed', 'result': output_filename, 'file_type': 'zip'}
 
     except Exception as e:
+        db_job = db.query(models.GenerationJob).filter(models.GenerationJob.id == self.request.id).first()
+        if db_job:
+            db_job.status = 'FAILURE'
+            db.commit()
         # Capturar el tipo de excepción y el mensaje
         exc_type = type(e).__name__
         exc_message = str(e)
@@ -139,3 +160,5 @@ def generate_documents_task(self, template_content_bytes: bytes, data_content_by
         )
         # Devolver la información de la excepción para que Celery la procese correctamente
         raise e # Re-lanzar la excepción para que Celery la marque como FAILURE
+    finally:
+        db.close()
