@@ -41,7 +41,7 @@ export default function LoginForm() {
     console.log(values);
     // Simulate API call
     setTimeout(() => {
-      router.push('/dashboard');
+      router.push('/projects');
     }, 1000);
   }
 

@@ -12,7 +12,7 @@
 - [x] Corregido el error de `AttributeError: '_Cell' object has no attribute 'runs'` y mejorado el reemplazo de placeholders para preservar el formato.
 - [x] Implementada y verificada la descarga condicional de documentos (DOCX para uno, ZIP para múltiples).
 
-### Fase 2: Persistencia de Datos (En Progreso)
+### Fase 2: Persistencia de Datos y Flujo de Proyectos (En Progreso)
 - [x] **Dependencias y Configuración:** Añadidas `SQLAlchemy` y `Alembic`. Configurada la base de datos SQLite.
 - [x] **Modelos y Migración:** Definidos los modelos de datos (`User`, `Template`, `Job`, etc.) y creada la migración inicial.
 - [x] **Integración con Backend:** Los endpoints de `jobs` ahora leen y escriben en la base de datos. El worker de Celery actualiza el estado del trabajo en la BD.
@@ -42,11 +42,10 @@
   - [x] Actualizada la barra lateral (`app-sidebar.tsx`) para reflejar el proyecto activo y generar enlaces contextualizados.
 - [x] **Contextualización de Páginas Existentes (Frontend):**
   - [x] Actualizadas las páginas de Generación, Dashboard, Gestión de Plantillas y Detalles de Plantilla para que operen dentro del contexto del `project_id` seleccionado, filtrando datos y enviando el `project_id` en todas las llamadas a la API.
-  - [x] **Movimiento de Archivos:** Se han movido las páginas de `templates` y `templates/manage` a `projects/[project_id]/templates` y `projects/[project_id]/templates/manage` respectivamente. También se movió `templates/[id]` a `projects/[project_id]/templates/[id]`.
 
 ## Pasos Pendientes y Mejoras
 
-- [ ] **Error Pendiente:** `Build Error: Parsing ecmascript source code failed. Unexpected token `div`. Expected jsx identifier` en `src/app/(app)/projects/[project_id]/templates/page.tsx` (línea 216:6).
+- [ ] **Error Pendiente:** `TypeError: 'owner_id' is an invalid keyword argument for Template` en `backend/main.py` (línea 94).
 
 - [ ] **Paso 1: Visualización HTML de Plantillas (Feature Avanzada):**
   - **Descripción:** Permitir al usuario visualizar la plantilla `.docx` directamente en el navegador como HTML, con los placeholders resaltados. Esto requerirá un nuevo endpoint en el backend para la conversión DOCX a HTML y un componente en el frontend para renderizarlo.

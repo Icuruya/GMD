@@ -1,20 +1,22 @@
+
+PS C:\Users\Sistemas AFC> cd .\Documents\
+PS C:\Users\Sistemas AFC\Documents> cd .\GMD\
+PS C:\Users\Sistemas AFC\Documents\GMD> cd .\backend\
 PS C:\Users\Sistemas AFC\Documents\GMD\backend> venv\Scripts\uvicorn.exe main:app --reload
 INFO:     Will watch for changes in these directories: ['C:\\Users\\Sistemas AFC\\Documents\\GMD\\backend']
 INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [28808] using WatchFiles
-INFO:     Started server process [22932]
+INFO:     Started reloader process [4556] using WatchFiles
+INFO:     Started server process [3284]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     127.0.0.1:58551 - "GET /jobs HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:63094 - "GET /projects HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63094 - "GET /projects/1/jobs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63096 - "GET /projects/1/jobs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63096 - "GET /projects/1/jobs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63096 - "GET /projects/1/templates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63103 - "GET /projects/1/templates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63110 - "POST /templates HTTP/1.1" 500 Internal Server Error
 ERROR:    Exception in ASGI application
-Traceback (most recent call last):
-  File "C:\Users\Sistemas AFC\Documents\GMD\backend\venv\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2522, in get_property
-    return self._props[key]
-           ~~~~~~~~~~~^^^^^
-KeyError: 'templates'
-
-The above exception was the direct cause of the following exception:
-
 Traceback (most recent call last):
   File "C:\Users\Sistemas AFC\Documents\GMD\backend\venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 409, in run_asgi
     result = await app(  # type: ignore[func-returns-value]
@@ -68,58 +70,21 @@ Traceback (most recent call last):
   File "C:\Users\Sistemas AFC\Documents\GMD\backend\venv\Lib\site-packages\fastapi\routing.py", line 213, in run_endpoint_function
     return await dependant.call(**values)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Sistemas AFC\Documents\GMD\backend\main.py", line 198, in get_all_jobs
-    jobs = db.query(models.GenerationJob).all()
-           ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Sistemas AFC\Documents\GMD\backend\venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2955, in query
-    return self._query_cls(entities, self, **kwargs)
-           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Sistemas AFC\Documents\GMD\backend\venv\Lib\site-packages\sqlalchemy\orm\query.py", line 276, in __init__
-    self._set_entities(entities)
-    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^
-  File "C:\Users\Sistemas AFC\Documents\GMD\backend\venv\Lib\site-packages\sqlalchemy\orm\query.py", line 289, in _set_entities
-    coercions.expect(
-    ~~~~~~~~~~~~~~~~^
-        roles.ColumnsClauseRole,
-        ^^^^^^^^^^^^^^^^^^^^^^^^
-    ...<2 lines>...
-        post_inspect=True,
-        ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Sistemas AFC\Documents\GMD\backend\main.py", line 94, in create_template
+    db_template = models.Template(name=file.filename, file_path=file_path, project_id=project_id, owner_id=1) # owner_id hardcodeado por ahora
+  File "<string>", line 4, in __init__
+  File "C:\Users\Sistemas AFC\Documents\GMD\backend\venv\Lib\site-packages\sqlalchemy\orm\state.py", line 571, in _initialize_instance
+    with util.safe_reraise():
+         ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Sistemas AFC\Documents\GMD\backend\venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\Sistemas AFC\Documents\GMD\backend\venv\Lib\site-packages\sqlalchemy\orm\state.py", line 569, in _initialize_instance
+    manager.original_init(*mixed[1:], **kwargs)
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Sistemas AFC\Documents\GMD\backend\venv\Lib\site-packages\sqlalchemy\orm\decl_base.py", line 2173, in _declarative_constructor
+    raise TypeError(
+        "%r is an invalid keyword argument for %s" % (k, cls_.__name__)
     )
-    ^
-  File "C:\Users\Sistemas AFC\Documents\GMD\backend\venv\Lib\site-packages\sqlalchemy\sql\coercions.py", line 388, in expect
-    insp._post_inspect
-  File "C:\Users\Sistemas AFC\Documents\GMD\backend\venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 1338, in __get__
-    obj.__dict__[self.__name__] = result = self.fget(obj)
-                                           ~~~~~~~~~^^^^^
-  File "C:\Users\Sistemas AFC\Documents\GMD\backend\venv\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2724, in _post_inspect
-    self._check_configure()
-    ~~~~~~~~~~~~~~~~~~~~~^^
-  File "C:\Users\Sistemas AFC\Documents\GMD\backend\venv\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2401, in _check_configure
-    _configure_registries({self.registry}, cascade=True)
-    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Sistemas AFC\Documents\GMD\backend\venv\Lib\site-packages\sqlalchemy\orm\mapper.py", line 4214, in _configure_registries
-    _do_configure_registries(registries, cascade)
-    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Sistemas AFC\Documents\GMD\backend\venv\Lib\site-packages\sqlalchemy\orm\mapper.py", line 4255, in _do_configure_registries
-    mapper._post_configure_properties()
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
-  File "C:\Users\Sistemas AFC\Documents\GMD\backend\venv\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2418, in _post_configure_properties
-    prop.init()
-    ~~~~~~~~~^^
-  File "C:\Users\Sistemas AFC\Documents\GMD\backend\venv\Lib\site-packages\sqlalchemy\orm\interfaces.py", line 589, in init
-    self.do_init()
-    ~~~~~~~~~~~~^^
-  File "C:\Users\Sistemas AFC\Documents\GMD\backend\venv\Lib\site-packages\sqlalchemy\orm\relationships.py", line 1661, in do_init
-    self._generate_backref()
-    ~~~~~~~~~~~~~~~~~~~~~~^^
-  File "C:\Users\Sistemas AFC\Documents\GMD\backend\venv\Lib\site-packages\sqlalchemy\orm\relationships.py", line 2145, in _generate_backref
-    self._add_reverse_property(self.back_populates)
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Sistemas AFC\Documents\GMD\backend\venv\Lib\site-packages\sqlalchemy\orm\relationships.py", line 1592, in _add_reverse_property
-    other = self.mapper.get_property(key, _configure_mappers=False)
-  File "C:\Users\Sistemas AFC\Documents\GMD\backend\venv\Lib\site-packages\sqlalchemy\orm\mapper.py", line 2524, in get_property
-    raise sa_exc.InvalidRequestError(
-    ...<3 lines>...
-    ) from err
-sqlalchemy.exc.InvalidRequestError: Mapper 'Mapper[User(users)]' has no property 'templates'.  If this property was indicated from other mappers or configure events, ensure registry.configure() has been called.
+TypeError: 'owner_id' is an invalid keyword argument for Template
+INFO:     127.0.0.1:63113 - "GET /projects/1/templates HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63114 - "GET /projects/1/templates HTTP/1.1" 200 OK

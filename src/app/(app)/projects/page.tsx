@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -112,37 +112,33 @@ export default function ProjectsPage() {
           ) : projects.length === 0 ? (
             <p>No hay proyectos creados aún. ¡Crea uno para empezar!</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Nombre del Proyecto</TableHead>
-                  <TableHead>Fecha de Creación</TableHead>
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {projects.map((project) => (
-                  <TableRow key={project.id}>
-                    <TableCell className="font-medium">{project.id}</TableCell>
-                    <TableCell>{project.name}</TableCell>
-                    <TableCell>{new Date(project.created_at).toLocaleString()}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant={selectedProjectId === project.id ? "secondary" : "outline"}
-                        size="sm"
-                        onClick={() => {
-                          selectProject(project.id, project.name);
-                          router.push(`/projects/${project.id}/dashboard`);
-                        }}
-                      >
-                        {selectedProjectId === project.id ? "Seleccionado" : "Seleccionar"}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {projects.map((project) => (
+                <Card key={project.id} className="flex flex-col">
+                  <CardHeader>
+                    <CardTitle>{project.name}</CardTitle>
+                    <CardDescription>ID: {project.id}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-grow">
+                    <p className="text-sm text-muted-foreground">
+                      Creado el: {new Date(project.created_at).toLocaleDateString()}
+                    </p>
+                  </CardContent>
+                  <CardFooter>
+                    <Button
+                      className="w-full"
+                      variant={selectedProjectId === project.id ? "secondary" : "default"}
+                      onClick={() => {
+                        selectProject(project.id, project.name);
+                        router.push(`/projects/${project.id}`);
+                      }}
+                    >
+                      {selectedProjectId === project.id ? "Seleccionado" : "Abrir Proyecto"}
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>
