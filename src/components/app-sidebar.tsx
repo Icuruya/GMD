@@ -2,98 +2,58 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  LayoutGrid,
-  ArrowRightLeft,
-  FileCog,
-  Settings,
-  LogOut,
-  UserCircle,
-  FileText,
-  FolderOpen,
-  FolderDot
-} from 'lucide-react';
-
-import AppLogo from '@/components/app-logo';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { Settings, FileText, LayoutDashboard, FolderKanban } from 'lucide-react';
 import { useProject } from '@/context/ProjectContext';
 
-const navItems = [
-  { href: '/dashboard', icon: LayoutGrid, label: 'Dashboard' },
-  { href: '/projects', icon: FolderOpen, label: 'Projects' },
-  { href: '/templates', icon: FileText, label: 'Generate' },
-  { href: '/templates/manage', icon: FileText, label: 'Manage Templates' },
-  { href: '/mapper', icon: ArrowRightLeft, label: 'AI Mapper' },
-  { href: '/rules', icon: FileCog, label: 'Rule Builder' },
-  { href: '/settings', icon: Settings, label: 'Settings' },
-];
-
-export default function AppSidebar() {
+const AppSidebar = () => {
   const pathname = usePathname();
+  // Obtenemos los datos correctos del contexto, tal como se definen en tu archivo
   const { selectedProjectId, selectedProjectName } = useProject();
 
-  const getHref = (baseHref: string) => {
-    if (selectedProjectId) {
-      return `/projects/${selectedProjectId}${baseHref}`;
-    } else if (baseHref === '/projects') {
-      return baseHref;
-    } else {
-      return '/projects'; // Redirigir a la página de proyectos si no hay uno seleccionado
-    }
-  };
+  // Si el ID o el Nombre del proyecto no están disponibles, no renderizamos NADA.
+  // Esto previene el error "Cannot read properties of null".
+  if (!selectedProjectId || !selectedProjectName) {
+    return null;
+  }
 
-  const isLinkActive = (baseHref: string) => {
-    if (selectedProjectId) {
-      return pathname === `/projects/${selectedProjectId}${baseHref}`;
-    } else {
-      return pathname === baseHref;
-    }
-  };
+  // Los enlaces se construyen usando el ID del proyecto seleccionado
+  const navItems = [
+    { href: `/projects/${selectedProjectId}/dashboard`, label: 'Dashboard', icon: LayoutDashboard },
+    { href: `/projects/${selectedProjectId}/generate`, label: 'Generate', icon: FileText },
+    { href: `/projects/${selectedProjectId}/templates/manage`, label: 'Manage Templates', icon: FolderKanban },
+    // { href: '#', label: 'AI Mapper', icon: Bot }, // Comentado
+    // { href: '#', label: 'Rule Builder', icon: SlidersHorizontal }, // Comentado
+    { href: '#', label: 'Settings', icon: Settings },
+  ];
 
   return (
-    <aside className="hidden md:flex flex-col w-64 border-r bg-card text-card-foreground">
-      <div className="p-4">
-        <AppLogo />
+    <aside className="w-64 flex-shrink-0 border-r bg-white dark:border-gray-800 dark:bg-gray-950 p-4 flex flex-col">
+      <div className="p-2 mb-4">
+        {/* Mostramos el nombre del proyecto activo */}
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate" title={selectedProjectName}>
+          {selectedProjectName}
+        </h2>
+        <p className="text-xs text-gray-500 dark:text-gray-400">Project Workspace</p>
       </div>
-      <nav className="flex-1 px-4 py-2">
-        {selectedProjectId && selectedProjectName && (
-          <div className="mb-4 p-2 bg-primary/10 rounded-md flex items-center gap-2">
-            <FolderDot className="h-5 w-5 text-primary" />
-            <span className="text-sm font-medium text-primary">{selectedProjectName}</span>
-          </div>
-        )}
-        <ul className="space-y-1">
-          {navItems.map((item) => (
-            <li key={item.href}>
-              <Link href={getHref(item.href)}>
-                <Button
-                  variant={isLinkActive(item.href) ? 'secondary' : 'ghost'}
-                  className="w-full justify-start"
-                  disabled={!selectedProjectId && item.href !== '/projects'}
-                >
-                  <item.icon className="mr-2 h-4 w-4" />
-                  {item.label}
-                </Button>
-              </Link>
-            </li>
-          ))}
-        </ul>
+
+      <nav className="flex-1 space-y-1">
+        {navItems.map((item) => (
+          <Link
+            key={item.label}
+            href={item.href}
+            className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              pathname.startsWith(item.href)
+                ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-50'
+                : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-50'
+            }`}
+          >
+            <item.icon className="h-4 w-4" />
+            {item.label}
+          </Link>
+        ))}
       </nav>
-      <div className="p-4">
-        <Separator className="my-2" />
-        <div className="flex items-center gap-3 py-2">
-            <UserCircle className="h-8 w-8 text-muted-foreground" />
-            <div className='flex-1'>
-                <p className="text-sm font-medium">User</p>
-                <p className="text-xs text-muted-foreground">user@gmd.com</p>
-            </div>
-            <Button variant="ghost" size="icon" asChild>
-                <Link href="/"><LogOut className="h-4 w-4" /></Link>
-            </Button>
-        </div>
-      </div>
     </aside>
   );
-}
+};
+
+export default AppSidebar;

@@ -2,70 +2,62 @@
 
 ## 1. Project Vision
 
-The goal is to build a web platform for users to mass-generate documents. Users can upload their own Word templates (`.docx`), upload their data (from Excel/CSV), visually map the data columns to the template's placeholders, and generate a unique document for each row of data. The system should be generic and not tied to a specific document type, eventually allowing users to define their own transformation and conditional logic rules.
+Building an enterprise-grade web platform for intelligent, rule-based document automation. Users will upload Word templates (`.docx`) and structured data (Excel/CSV), visually map data to placeholders, and define complex business logic without writing code. The platform will transcend simple mail-merge, enabling the generation of sophisticated, dynamic documents based on conditional rules, calculations, and structural modifications.
 
-## 2. Current Architecture: Functional Prototype
+## 2. Current Architecture: Scalable Foundation
 
-We have a functional local prototype that accomplishes the core workflow.
+The application is built on a modern, scalable architecture designed for performance and maintainability.
 
--   **Frontend:** A Next.js application in `src/` provides the full user interface for the generation workflow:
-    1.  Upload a `.docx` template.
-    2.  Upload an `.xlsx` or `.csv` data file.
-    3.  Visually map template placeholders to data columns.
-    4.  Trigger the generation process.
-
--   **Backend:** A FastAPI server in `backend/` written in Python. It exposes a REST API that the frontend consumes.
-
--   **Core API Endpoints:**
-    -   `POST /templates/placeholders`: Receives a `.docx` file and returns a list of all found placeholders.
-    -   `POST /generate/bulk`: Receives a template, data, and mappings. It generates all documents and returns them in a single `.zip` file.
+-   **Frontend:** A Next.js application providing a reactive and intuitive user interface for project management, template handling, data mapping, and job monitoring.
+-   **Backend:** A high-performance FastAPI (Python) server that exposes a REST API for all frontend operations.
+-   **Asynchronous Processing:** A robust background task system using Celery and Redis ensures the UI remains responsive during large-scale document generation jobs, providing a seamless user experience.
+-   **Persistence:** A database layer using SQLAlchemy (SQLite for development, PostgreSQL for production) persists all user assets, including projects, templates, data mappings, and generation job history.
 
 ## 3. Project Roadmap
 
-This roadmap outlines the key phases to evolve the prototype into a robust, scalable, and user-friendly web application.
+### Phase 1: Asynchronous Generation & Core Platform (Completed)
 
-### Phase 1: Asynchronous Generation & Scalability
+-   **Objective:** Establish a non-blocking, scalable architecture and a persistent workflow.
+-   **Key Features Implemented:** Asynchronous job processing via Celery, database integration for projects, templates, and jobs, a project-based workflow with a central dashboard, and a refined UI navigation flow.
 
--   **Problem:** The current synchronous generation process can cause browser and server timeouts with large datasets (e.g., thousands of documents).
+### Phase 2: Enhanced UX & Asset Management (In Progress)
+
+-   **Objective:** Improve user efficiency and provide better tools for managing project assets.
 -   **Action Plan:**
-    1.  **Integrate Task Queue:** Add Celery with Redis to the FastAPI backend to manage background tasks.
-    2.  **Create Job Endpoint:** Convert `POST /generate/bulk` into `POST /jobs`. This endpoint will validate the request, create a `GenerationJob` record in the database with a "Queued" status, and return a `job_id` to the frontend immediately.
-    3.  **Background Worker:** The generation logic will be executed by a Celery worker in the background.
-    4.  **Status Polling:** Implement a `GET /jobs/{job_id}` endpoint. The frontend will use this to periodically check the job status (e.g., "Processing", "Completed", "Failed").
-    5.  **Download Link:** Once the job is "Completed", the status endpoint will provide a secure URL to download the resulting ZIP file.
+    1.  **Visual Template Preview:** Implement a feature to render `.docx` templates as HTML directly in the browser. This will provide users with an interactive preview, highlighting placeholders and improving the mapping experience.
+    2.  **Advanced Mapping UI:** Enhance the mapping interface with drag-and-drop capabilities and status indicators for mapped/unmapped placeholders.
+    3.  **Asset Deletion:** Implement secure deletion for projects, templates, mappings, and job history (including generated files) with user confirmation.
+    4.  **Refine Project Context:** Refactor the `ProjectContext` to manage a single `activeProject` object, improving code clarity and reducing potential errors.
 
-### Phase 2: Persistence & Data Management
+### Phase 3: Intelligent Automation & Pre-processing
 
--   **Problem:** The application is currently stateless. Templates, mappings, and generation history are lost after each session.
+-   **Objective:** Reduce manual user effort and introduce smart, time-saving features.
 -   **Action Plan:**
-    1.  **Database Setup:** Integrate a database with the backend. Use SQLite for simple local development and plan for PostgreSQL in production.
-    2.  **Define Models:** Create database models for `Users`, `Templates` (storing file info and path), `ColumnMappings` (linking a template to a specific mapping configuration), and `GenerationJobs`.
-    3.  **API Integration:** Modify the API endpoints to save, retrieve, and manage data from the database. For example, allow users to select a previously uploaded template.
+    1.  **AI-Powered Mapping (Semantic Matching):** Implement the AI mapper to automatically suggest mappings by analyzing the semantic meaning of placeholders and data headers, not just exact text matches.
+    2.  **Data Formatting Presets:** Allow users to apply formatting rules directly during the mapping phase (e.g., format a column as Currency `($1,234.56)`, Date `DD/MM/YYYY`, or Uppercase).
+    3.  **Initial Data Validation:** Provide a pre-generation check to warn users about potential issues, such as missing data in mapped columns or data type mismatches.
 
-### Phase 3: Enhanced User Experience & Features
+### Phase 4: The Generic Rule Engine (The Core Feature)
 
--   **Problem:** The user interface is functional for the core workflow but lacks features for managing assets or tracking progress.
+-   **Objective:** Empower non-technical users to replicate the complex logic currently hard-coded in the Python generation scripts. This is the key differentiator.
 -   **Action Plan:**
-    1.  **User Dashboard:** Create a central dashboard where users can view and manage their saved templates and see a history of their past generation jobs.
-    2.  **Real-time Feedback:** Implement a progress bar or status indicator in the UI that updates based on the information from the `GET /jobs/{job_id}` endpoint.
-    3.  **Saved Mappings:** Develop a UI for users to save, name, and reuse their column mappings for specific templates.
-    4.  **PDF Generation:** Add an option to generate output as individual PDF files within the ZIP, or even a single consolidated PDF.
+    1.  **Rule Builder UI:** Design and build a user-friendly interface for creating a sequence of rules that will be executed for each data row.
+    2.  **Rule Types to Implement:**
+        -   **Conditional Logic (IF/THEN):** Allow rules like: "`IF` `[CLAVE DE EXTENSION]` `is not` `0` `THEN` `Skip Generation`".
+        -   **Data Transformation:** Allow users to create new "Calculated Placeholders".
+            -   **Formulas:** `[TOTAL]` = `SUM([Subtotal], [Tax])`.
+            -   **Text Conversion:** `[TOTAL_TEXTO]` = `CONVERT_TO_WORDS([TOTAL])`.
+            -   **Concatenation:** `[FULL_NAME]` = `JOIN([FirstName], " ", [LastName])`.
+        -   **Document Structure Manipulation:** Allow rules that modify the template structure based on data.
+            -   `IF` `[VALOR CATASTRAL CONSTRUCCION 2024]` `is equal to` `0` `THEN` `Delete Element` `[Tabla_Construccion_2024]`.
+            -   `IF` `[AÑO]` `is not in` `[Anos_Activos]` `THEN` `Delete Section` `[Seccion_Año]`.
+        -   **Content Replacement:** `IF` `[MILLAR]` `is equal to` `0.002` `THEN` `Set Paragraph Text` `[PARRAFO_MILLAR]` to `"...texto para 2 al millar..."`.
 
-### Phase 4: Generic Rule Engine
+### Phase 5: Deployment & Enterprise Readiness
 
--   **Problem:** The current system only supports direct 1-to-1 data mapping. It cannot handle conditional logic or data transformations, which is key to making it truly generic.
+-   **Objective:** Prepare the application for production deployment and enterprise-level features.
 -   **Action Plan:**
-    1.  **Rule Engine Integration:** Research and integrate a Python-based rules engine (e.g., `business-rules`, `durable_rules`, or a custom-built solution).
-    2.  **Rule Definition UI:** Design and build a user-friendly interface for defining rules without code. For example:
-        -   **Conditionals:** "Include paragraph X *only if* column `Amount` > 1000."
-        -   **Formatting:** "Format column `Date` as `YYYY-MM-DD`."
-        -   **Calculated Fields:** "Create a new placeholder `[Full_Name]` by combining `[First_Name]` and `[Last_Name]`."
-    3.  **Backend Logic:** Modify the generation worker to process these rules for each row of data.
-
-### Phase 5: Deployment & Production Readiness
-
--   **Problem:** The application is designed for local execution only.
--   **Action Plan:**
-    1.  **Containerization:** Write `Dockerfile`s for the Next.js and FastAPI applications.
-    2.  **Orchestration:** Create a `docker-compose.yml` file to simplify the setup of the frontend, backend, database, and Celery/Redis for local development.
-    3.  **Cloud Deployment:** Prepare scripts and configurations for deployment to a cloud platform like Vercel (for Next.js) and Google Cloud Run or AWS Fargate (for the backend services).
+    1.  **Containerization:** Finalize `Dockerfile`s and `docker-compose.yml` for consistent environments.
+    2.  **Cloud Deployment:** Deploy to Vercel (Frontend) and a scalable cloud service like Google Cloud Run or AWS Fargate (Backend).
+    3.  **User Authentication:** Implement a full authentication system (e.g., NextAuth.js) with user registration, password management, and roles.
+    4.  **Team & Collaboration Features:** Introduce multi-user support within projects for enterprise clients.

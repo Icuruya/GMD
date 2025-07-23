@@ -91,7 +91,7 @@ async def create_template(file: UploadFile = File(...), project_id: int = Form(.
         buffer.write(await file.read())
     
     # Crear el registro en la base de datos
-    db_template = models.Template(name=file.filename, file_path=file_path, project_id=project_id, owner_id=1) # owner_id hardcodeado por ahora
+    db_template = models.Template(name=file.filename, file_path=file_path, project_id=project_id) # owner_id se elimina por ahora
     db.add(db_template)
     db.commit()
     db.refresh(db_template)
@@ -243,7 +243,7 @@ async def create_generation_job(
     )
 
     # Guardar el trabajo en la base de datos
-    db_job = models.GenerationJob(id=task.id, status="PENDING", template_id=template_id, user_id=1, project_id=project_id) # user_id hardcodeado por ahora
+    db_job = models.GenerationJob(id=task.id, status="PENDING", template_id=template_id, project_id=project_id)
     db.add(db_job)
     db.commit()
     db.refresh(db_job)
